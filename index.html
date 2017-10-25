@@ -35,75 +35,111 @@
         var engine = new BABYLON.Engine(canvas, true);
 
         var createScene = function () {
-        
-            // This creates a basic Babylon Scene object (non-mesh)
-            var scene = new BABYLON.Scene(engine);
-            scene.createDefaultVRExperience();
             
-            var light = new BABYLON.HemisphericLight("sun", new BABYLON.Vector3(0, 1, 0), scene);
-            light.intensity = .7;
-        
-            // Skybox
-            var skybox = BABYLON.Mesh.CreateBox("skyBox", 100.0, scene);
-            var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-            skyboxMaterial.backFaceCulling = false;
-            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("textures/TropicalSunnyDay", scene);
-            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-            skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-            skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-            skyboxMaterial.disableLighting = true;
-            skybox.material = skyboxMaterial;
-        
-        
-            // Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
-            var ground = BABYLON.Mesh.CreateGround("ground1", 20, 20, 1, scene);
-        
-            var redBox = BABYLON.Mesh.CreateBox("red", .5, scene);
-            var redMat = new BABYLON.StandardMaterial("ground", scene);
-            redMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
-            redMat.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
-            redMat.emissiveColor = BABYLON.Color3.Red();
-            redBox.material = redMat;
-            redBox.position = new BABYLON.Vector3(2, .5, 2);
+                // This creates a basic Babylon Scene object (non-mesh)
+                var scene = new BABYLON.Scene(engine);
+              //  scene.createDefaultVRExperience();
             
-            //Variable keeping track of score.
-            var scoreVar = {'score': 0};
-        
-            // GUI
-            var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        
-            var scoreText = new BABYLON.GUI.TextBlock();
-            scoreText.text = "Score: " + scoreVar.score.toString();
-            scoreText.color = "black";
-            scoreText.fontSize = 30;
-            scoreText.paddingTop = 10;
-            scoreText.paddingLeft = 10;
-        
-            advancedTexture.addControl(scoreText);   
-        
-            scoreText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-            scoreText.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-        
-            //Register Actions/Triggers
-            redBox.actionManager = new BABYLON.ActionManager(scene);
-            redBox.actionManager.registerAction(new BABYLON.SetValueAction(BABYLON.ActionManager.OnPickTrigger, redBox.material, "wireframe", true))
-            .then(new BABYLON.SetValueAction(BABYLON.ActionManager.OnPickTrigger, redBox.material, "wireframe", false));
-        
-            redBox.actionManager.registerAction(new BABYLON.IncrementValueAction(BABYLON.ActionManager.OnPickTrigger, scoreVar, "score", 1));     
-        
-            //Animation
-            var alpha = 0;
-            scene.registerBeforeRender(function(){
-                redBox.position.x = 5* Math.cos(alpha);
-                redBox.position.y = 1;
-                redBox.position.z = 5* Math.sin(alpha);
-                alpha +=.005;
+                var camera = new BABYLON.WebVRFreeCamera("Camera", new BABYLON.Vector3(0,1,0), scene);
+               // var camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, BABYLON.Vector3.Zero(), scene);
+                camera.attachControl(canvas, true);
+            
+                var light = new BABYLON.HemisphericLight("sun", new BABYLON.Vector3(0, 1, 0), scene);
+                light.intensity = .7;
+            
+                // Skybox
+                var skybox = BABYLON.Mesh.CreateBox("skyBox", 100.0, scene);
+                var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+                skyboxMaterial.backFaceCulling = false;
+                skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("textures/TropicalSunnyDay", scene);
+                skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+                skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+                skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+                skyboxMaterial.disableLighting = true;
+                skybox.material = skyboxMaterial;
+                skybox.isPickable = false;
+            
+                // Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
+                var ground = BABYLON.Mesh.CreateGround("ground1", 20, 20, 1, scene);
+                ground.isPickable = false;
+            
+                //clicked box
+                var blubox = BABYLON.Mesh.CreateBox("red", .5, scene);
+                var blueMat = new BABYLON.StandardMaterial("ground", scene);
+                blueMat.emissiveColor = BABYLON.Color3.Blue();
+                blubox.material = blueMat;
+                blubox.position = new BABYLON.Vector3(2, .5, 2);
+            
+                //sphere reticle
+                var reticle = BABYLON.Mesh.CreateSphere("reticle", 10, .03, scene);
+                var retmat= new BABYLON.StandardMaterial("reticalmaterial", scene); 
+                retmat.emissiveColor = BABYLON.Color3.Red();
+                retmat.specularColor = BABYLON.Color3.Black();
+                reticle.material = retmat;
+                reticle.isPickable = false;
+                reticle.position.z = 2;
+                reticle.parent = camera;
+               //reticle.parent = scene.activeCamera; //to use with createDefaultVRExperience()
+                
+                var scoreVar = {'score': 0};
+            
+             // GUI
+                var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+            
+                var scoreText = new BABYLON.GUI.TextBlock();
                 scoreText.text = "Score: " + scoreVar.score.toString();
-            });
-        
-            return scene;
-        
-        };
+                scoreText.color = "black";
+                scoreText.fontSize = 30;
+                scoreText.paddingTop = 10;
+                scoreText.paddingLeft = 10;
+            
+                advancedTexture.addControl(scoreText);   
+            
+                scoreText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+                scoreText.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+            
+            
+                blubox.actionManager = new BABYLON.ActionManager(scene);
+                blubox.actionManager.registerAction(new BABYLON.SetValueAction(BABYLON.ActionManager.OnPickTrigger, blubox.material, "wireframe", true))
+                .then(new BABYLON.SetValueAction(BABYLON.ActionManager.OnPickTrigger, blubox.material, "wireframe", false));
+            
+                blubox.actionManager.registerAction(new BABYLON.IncrementValueAction(BABYLON.ActionManager.OnPickTrigger, scoreVar, "score", 1));
+                 
+            
+                function castRay(){
+            
+                    var ray = camera.getForwardRay();
+                 //   var ray = scene.activeCamera.getForwardRay(); //to use with createDefaultVRExperience()
+            
+                    var hit = scene.pickWithRay(ray);
+            
+            
+                    if (hit.pickedMesh){
+                        reticle.material.emissiveColor = BABYLON.Color3.Green();
+                        hit.pickedMesh.scaling.y += 0.01;
+                    }
+                    else{
+                        reticle.material.emissiveColor = BABYLON.Color3.Red();
+                    }
+                }
+            
+            
+                //animation
+                var alpha = 0;
+                scene.registerBeforeRender(function(){
+                    blubox.position.x = 5* Math.cos(alpha);
+                    blubox.position.y = 0;
+                    blubox.position.z = 5* Math.sin(alpha);
+                    alpha +=.005;
+                    scoreText.text = "Score: " + scoreVar.score.toString();
+                    castRay();
+                });
+            
+                
+            
+                return scene;
+            
+            };
         
         var scene = createScene();
 
